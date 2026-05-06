@@ -95,26 +95,26 @@ function update() {
   let categories;
   let colorValue = (d) => d[colorField];
 
-  if (colorField === "primary_genre") {
-    const genreCounts = d3.rollup(
-      data,
-      (values) => values.length,
-      (d) => d[colorField]
-    );
-    const topGenres = Array.from(genreCounts.entries())
-      .sort((a, b) => d3.descending(a[1], b[1]))
-      .slice(0, 9)
-      .map(([genre]) => genre);
-    const topGenreSet = new Set(topGenres);
+  const valueCounts = d3.rollup(
+    data,
+    (values) => values.length,
+    (d) => d[colorField]
+  );
+  const sortedValues = Array.from(valueCounts.entries())
+    .sort((a, b) => d3.descending(a[1], b[1]))
+    .map(([value]) => value);
 
-    colorValue = (d) =>
-      topGenreSet.has(d[colorField]) ? d[colorField] : "Other";
-    categories = [...topGenres, "Other"];
+  if (sortedValues.length > 10) {
+    // Tableau10 has 10 swatches, so keep top 9 and bucket the rest.
+    const topValues = sortedValues.slice(0, 9);
+    const topValueSet = new Set(topValues);
+    colorValue = (d) => (topValueSet.has(d[colorField]) ? d[colorField] : "Other");
+    categories = [...topValues, "Other"];
   } else {
-    categories = Array.from(new Set(data.map((d) => d[colorField])));
+    categories = sortedValues;
   }
 
-  colorScale.domain(categories);
+  colorScale.domain(categories).range(d3.schemeTableau10);
   // TODO: Update x-axis, y-axis, and axis labels
   // Hint: d3.select('.x-axis').call(d3.axisBottom(xScale))
   //       d3.select('.x-label').text(xField)
